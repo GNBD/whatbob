@@ -105,7 +105,7 @@
             font-weight: bold;
         }
 
-        /* === 결과 링크 스타일 (추가됨) === */
+        /* 결과 링크 스타일 */
         #result a {
             color: inherit; /* 부모 요소(h2)의 색상을 그대로 사용 */
             text-decoration: none; /* 평소에는 밑줄 제거 */
@@ -116,18 +116,33 @@
             text-decoration: underline; /* 마우스를 올리면 밑줄 표시 */
             opacity: 0.8; /* 살짝 투명하게 */
         }
+
+        /* 점멸 효과 키프레임 */
+        @keyframes flash {
+            0%, 100% {
+                transform: scale(1);
+            }
+            50% {
+                transform: scale(1.05); /* 살짝 커지는 효과 */
+            }
+        }
+
+        /* 점멸 효과 클래스 */
+        .flashing-effect a {
+            animation: flash 1.2s infinite ease-in-out;
+        }
     </style>
 </head>
 <body>
 
     <div id="container">
         <h1>오늘 뭐 먹지? 🧐</h1>
-        <input type="text" id="tagInput" placeholder="예: 일식, 해장, 고기, 간편하게, 매콤한거... 또는 빈칸">
+        <input type="text" id="tagInput" placeholder="예: 한식 찌개, 일식 간편...">
         <h2 id="result">?</h2>
         <div id="tags"></div>
         <button id="spinButton">메뉴 추천!</button>
         
-        <div id="version">v1.0</div>
+        <div id="version">v2.2</div>
     </div>
 
     <script>
@@ -154,9 +169,31 @@
         }
 
         spinButton.addEventListener('click', function() {
+            // 점멸 효과 제거
+            resultElement.classList.remove('flashing-effect');
+            resultElement.innerHTML = ''; 
+
             const originalQuery = tagInput.value.trim();
             const searchKeyword = getCoreKeyword(originalQuery);
-            const filteredList = searchKeyword ? foodList.filter(food => food.tags.includes(searchKeyword)) : foodList;
+
+            // === 다중 키워드 검색 로직 (변경됨) ===
+            // 1. 입력값을 쉼표나 공백으로 분리하고, 빈 문자열은 제거
+            const keywords = originalQuery
+                .replace(/,/g, ' ') // 쉼표를 공백으로 변경
+                .split(' ')          // 공백으로 분리
+                .filter(kw => kw.trim() !== ''); // 빈 키워드 제거
+
+            // 2. 분리된 각 키워드의 핵심 단어 추출
+            const searchKeywords = keywords.map(kw => getCoreKeyword(kw));
+
+            // 3. 필터링: searchKeywords 배열의 모든 키워드가 food.tags에 포함되어야 함
+            const filteredList = searchKeywords.length > 0
+                ? foodList.filter(food => {
+                    return searchKeywords.every(keyword => food.tags.includes(keyword));
+                  })
+                : foodList; // 검색어가 없으면 전체 리스트 사용
+
+            // 룰렛 애니메이션 시작
             let spinCount = 0;
             const spinDuration = 1500;
             const intervalTime = 50;
@@ -168,7 +205,7 @@
                 spinCount++;
                 const tempList = filteredList.length > 0 ? filteredList : foodList;
                 const randomTempFood = tempList[Math.floor(Math.random() * tempList.length)];
-                resultElement.textContent = randomTempFood.name; // 애니메이션 중에는 링크가 필요 없음
+                resultElement.textContent = randomTempFood.name;
                 if (spinCount * intervalTime > spinDuration) {
                     clearInterval(spinInterval);
                     showFinalResult(filteredList);
@@ -178,23 +215,22 @@
 
         function showFinalResult(list) {
             if (list.length === 0) {
-                resultElement.innerHTML = "결과 없음 😅"; // 링크가 아니므로 innerHTML 또는 textContent 사용 가능
+                resultElement.innerHTML = "결과 없음 😅";
                 tagsElement.textContent = "다른 키워드로 찾아보세요!";
+                resultElement.classList.remove('flashing-effect');
                 return;
             }
             const randomIndex = Math.floor(Math.random() * list.length);
             const finalFood = list[randomIndex];
 
-            // URL에서 사용할 수 있도록 음식 이름을 인코딩
             const encodedFoodName = encodeURIComponent(finalFood.name);
-            // Google 검색 URL 생성
             const searchUrl = `https://www.google.com/search?q=${encodedFoodName}`;
-
-            // === 결과 표시 로직 변경 ===
-            // <a> 태그를 포함한 HTML을 innerHTML 속성을 이용해 설정
-            resultElement.innerHTML = `<a href="${searchUrl}" target="_blank" title="Google에서 '${finalFood.name}' 검색">${finalFood.name}</a>`;
             
+            resultElement.innerHTML = `<a href="${searchUrl}" target="_blank" title="Google에서 '${finalFood.name}' 검색">${finalFood.name}</a>`;
             resultElement.style.color = '#e74c3c';
+            
+            // 점멸 효과 추가
+            resultElement.classList.add('flashing-effect');
             
             const tagString = finalFood.tags.split(', ').map(tag => `#${tag}`).join(' ');
             tagsElement.textContent = tagString;
