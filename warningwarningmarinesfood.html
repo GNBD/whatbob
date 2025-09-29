@@ -1,1 +1,207 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>해병푸드 배출기기</title>
+    <style>
+        /* (CSS 스타일 코드는 이전과 동일) */
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700&display=swap');
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            font-family: 'Noto Sans KR', sans-serif;
+            background-color: #f4f7f6;
+            flex-direction: column;
+            padding: 20px;
+        }
+        #container {
+            position: relative; 
+            text-align: center;
+            background-color: white;
+            padding: 40px 50px;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            width: 100%;
+            max-width: 550px;
+            margin-bottom: 20px;
+        }
+        h1 {
+            margin-top: 0;
+            color: #333;
+        }
+        #result {
+            font-size: 3.5em;
+            font-weight: 700;
+            color: #2c3e50;
+            height: 100px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-top: 25px; /* 입력창이 사라져서 마진 추가 */
+            margin-bottom: 10px;
+        }
+        #tags {
+            font-size: 1.1em;
+            color: #7f8c8d;
+            height: 40px;
+            margin-top: 10px;
+        }
+        #spinButton {
+            margin-top: 20px;
+            padding: 15px 35px;
+            font-size: 1.2em;
+            font-weight: bold;
+            color: white;
+            background-color: #ff6347;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(255, 99, 71, 0.3);
+        }
+        #spinButton:hover {
+            background-color: #e5533d;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(255, 99, 71, 0.4);
+        }
+        #spinButton:active {
+            transform: translateY(0);
+        }
+        #version {
+            position: absolute;
+            bottom: 15px;
+            right: 25px;
+            font-size: 0.8em;
+            color: #ccc;
+            font-weight: bold;
+        }
+        #result a {
+            color: inherit;
+            text-decoration: none;
+            transition: opacity 0.2s;
+        }
+        #result a:hover {
+            text-decoration: underline;
+            opacity: 0.8;
+        }
+        @keyframes flash {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+        .flashing-effect a {
+            animation: flash 1.2s infinite ease-in-out;
+        }
+        footer {
+            text-align: center;
+            color: #aaa;
+        }
+        footer p {
+            font-size: 0.8em;
+            margin: 5px 0;
+        }
+        footer a {
+            color: #999;
+            text-decoration: none;
+        }
+        footer a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
 
+    <div id="container">
+        <h1><span style="color: red;">아쎄이! 오늘 해병푸드는 뭘 먹을겐가?</span></h1>
+        <h2 id="result">새끼... 기합!</h2>
+        <div id="tags"></div>
+        <button id="spinButton"><span style="color: red;">메뉴를 배출한다!</span></button>
+        
+        <div id="version">v1.0</div>
+    </div>
+
+    <footer>
+        <p><a href="#">기획:rimoza</a> | <a href="#">야맛있다맛있어</a> | <a href="#">거기야거기:</a></p>
+        <p>© </p>
+    </footer>
+
+    <script>
+        // 해병문학 분위기를 순화하여 반영한 음식 목록
+        const foodList = [
+            { name: "황룡수육", tags: "해병, 고기, 전우애, 진한맛, 특식" },
+            { name: "새끼해병짜장", tags: "해병, 면, 검은맛, 기합, 특식" },
+            { name: "해병라면", tags: "해병, 면, 뜨거운, 사나이" },
+            { name: "전우애 떡볶이", tags: "해병, 분식, 매콤, 찐득, 단결" },
+            { name: "악!기름치킨", tags: "해병, 닭, 튀김, 바삭, 야식" },
+            { name: "오도해병카레", tags: "해병, 밥, 이국적, 노란색, 강렬" },
+            { name: "포신볶음밥", tags: "해병, 밥, 볶음, 고슬고슬, 에너지" },
+            { name: "아쎄이 김밥", tags: "해병, 간편, 든든, 초심" },
+            { name: "무모칠 부대찌개", tags: "해병, 국물, 얼큰, 전골, 다같이" },
+            { name: "톤톤정 돈까스", tags: "해병, 고기, 튀김, 바삭, 힘!" },
+            { name: "마철두 마라탕", tags: "해병, 국물, 얼얼, 자극적, 후임집합" },
+            { name: "싱싱 해병샐러드", tags: "해병, 야채, 신선, 건강, 위장" },
+            { name: "기열찐빠버거", tags: "해병, 간편, 빵, 전투식량" },
+            { name: "오도봉고 토스트", tags: "해병, 간편, 빵, 시작" },
+            { name: "해병 육회", tags: "해병, 고기, 날것, 신선, 생기" },
+            { name: "따흐흑 주먹밥", tags: "해병, 밥, 간편, 힘든날" },
+            { name: "라이라이라이 냉면", tags: "해병, 면, 시원, 여름, 질주" },
+            { name: "헤이빠빠리빠 햄버거", tags: "해병, 패스트푸드, 급식, 신속" },
+            { name: "개씹썅똥꾸릉내 스튜", tags: "해병, 국물, 진한, 숙성" },
+            { name: "황룡탕후루", tags: "해병, 간식, 달콤, 끈적" }
+        ];
+
+        const resultElement = document.getElementById('result');
+        const tagsElement = document.getElementById('tags');
+        const spinButton = document.getElementById('spinButton');
+        // tagInput 변수 삭제됨
+
+        // getCoreKeyword 함수 삭제됨
+
+        spinButton.addEventListener('click', function() {
+            resultElement.classList.remove('flashing-effect');
+            resultElement.innerHTML = ''; 
+
+            // 키워드 검색 및 리스트 필터링 로직 전체 삭제
+
+            let spinCount = 0;
+            const spinDuration = 1500;
+            const intervalTime = 50;
+            
+            resultElement.style.color = '#3498db';
+            tagsElement.textContent = '';
+
+            const spinInterval = setInterval(() => {
+                spinCount++;
+                // 필터링된 리스트가 아닌 전체 foodList를 사용
+                const randomTempFood = foodList[Math.floor(Math.random() * foodList.length)];
+                resultElement.textContent = randomTempFood.name;
+                if (spinCount * intervalTime > spinDuration) {
+                    clearInterval(spinInterval);
+                    // 항상 전체 foodList를 인자로 전달
+                    showFinalResult(foodList);
+                }
+            }, intervalTime);
+        });
+
+        function showFinalResult(list) {
+            // 리스트가 비어있을 경우의 로직은 이제 불필요하므로 삭제 가능
+            const randomIndex = Math.floor(Math.random() * list.length);
+            const finalFood = list[randomIndex];
+
+            const encodedFoodName = encodeURIComponent(finalFood.name);
+            const searchUrl = `https://www.google.com/search?q=${encodedFoodName} 해병문학`;
+            
+            resultElement.innerHTML = `<a href="${searchUrl}" target="_blank" title="Google에서 '${finalFood.name}' 검색">${finalFood.name}</a>`;
+            resultElement.style.color = '#e74c3c';
+            
+            resultElement.classList.add('flashing-effect');
+            
+            const tagString = finalFood.tags.split(', ').map(tag => `<span style="color: red;">#${tag}</span>`).join(' ');
+            tagsElement.innerHTML = tagString;
+        }
+    </script>
+
+</body>
+</html>
